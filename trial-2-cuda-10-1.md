@@ -55,35 +55,19 @@ I followed the steps and get input for System requirements for Ubuntu 20.04 & 18
 | XLC | NO | NO |
 | CLANG | 9.0.0 | 8.0.0 |
 
-Then I executed the following commands for 20.04 
+The solution was to uninstall all cuda as per the above step and only install `nvidia-cuda-toolkit` as per the suggestion from the article [Installing TensorFlow GPU in Ubuntu 20.04](https://towardsdatascience.com/installing-tensorflow-gpu-in-ubuntu-20-04-4ee3ca4cb75d). The two different methods provided by the article in resource [^1] and the CUDA documentation they are both providing directions to install CUDA 11.0 on Ubuntu 20.04 (the article) or CUDA 10.1 on Ubuntu 18.04 (CUDA Documentation). But I followed the last article is that it shows a way to install CUDA 10.1 but on Ubuntu 20.04 which is matching my case.
+
+So I executed the following command.
 
 ```bash
-#!/bin/bash
-
-wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
-sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
-
-# Download .deb package
-wget http://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda-repo-ubuntu1804-10-1-local-10.1.243-418.87.00_1.0-1_amd64.deb
-sudo dpkg -i cuda-repo-ubuntu1804-10-1-local-10.1.243-418.87.00_1.0-1_amd64.deb
-sudo apt-key add /var/cuda-repo-10-1-local-10.1.243-418.87.00/7fa2af80.pub
-
-# Installs all CUDA Toolkit packages required to develop CUDA applications.
-# Does not include the driver.
-sudo apt-get update
-sudo apt-get -f install cuda-toolkit-10-1 cuda-libraries-10-1
 sudo apt install nvidia-cuda-toolkit
 ```
 
-> PLEASE NOTE that using command `sudo apt-get -y install cuda` as per the documentation will install the CUDA Toolkit and Driver packages and in our case it will be driver 418. It caused problem to my machine and I had to remove it following the guidelines in reference [^7]
-> To overcome installing the drivers I used the meta package guidelines from reference [^6] to identify how to install the toolkit without installing the drivers. Sso now the command will be 
-> `sudo apt-get -y install cuda-toolkit-10-1`
+when I run command
 
-when I run command 
+`nvidia-smi`
 
-> `nvidia-smi`
-
-I got the following 
+I got the following
 
 ```
 +-----------------------------------------------------------------------------+
@@ -110,7 +94,7 @@ I got the following
 +-----------------------------------------------------------------------------+
 ```
 
-and when I install execute the command `nvcc -V` it shows me the following result:
+and when I execute the command `nvcc -V` it shows me the following result:
 
 ```
 nvcc: NVIDIA (R) Cuda compiler driver
@@ -119,7 +103,49 @@ Built on Sun_Jul_28_19:07:16_PDT_2019
 Cuda compilation tools, release 10.1, V10.1.243
 ```
 
-> Please note that there is no relation between the CUDA version (11.0) in the outcome of `nvidia-smi` and the cuda version of `nvcc -V` outcome as [explained in this link](https://stackoverflow.com/questions/53422407/different-cuda-versions-shown-by-nvcc-and-nvidia-smi).
+> **Note:** There is no relation between the CUDA version (11.0) in the outcome of `nvidia-smi` and the cuda version of `nvcc -V` outcome as [explained in this link](https://stackoverflow.com/questions/53422407/different-cuda-versions-shown-by-nvcc-and-nvidia-smi).
+
+Then I added the following lines to the `~/.bashrc` to update the `PATH` variable as per the documentation as the following:
+
+```bash
+CUDA_PATH=/usr/lib/cuda
+if [ -d "$CUDA_PATH" ] 
+then
+    export PATH="$CUDA_PATH/bin${PATH:+:${PATH}}"
+    export LD_LIBRARY_PATH="$CUDA_PATH/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+    export LD_LIBRARY_PATH="$CUDA_PATH/include${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+fi
+unset CUDA_PATH
+```
+
+then start the bash by executing command `source ~/.bashrc` and it is recommended to restart the machine for CUDA installation to complete.
+
+
+#### 2.3.1 Failed trials but good experience !!
+
+I executed the following commands for 20.04 
+
+```bash
+#!/bin/bash
+
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
+sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
+
+# Download .deb package
+wget http://developer.download.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda-repo-ubuntu1804-10-1-local-10.1.243-418.87.00_1.0-1_amd64.deb
+sudo dpkg -i cuda-repo-ubuntu1804-10-1-local-10.1.243-418.87.00_1.0-1_amd64.deb
+sudo apt-key add /var/cuda-repo-10-1-local-10.1.243-418.87.00/7fa2af80.pub
+
+# Installs all CUDA Toolkit packages required to develop CUDA applications.
+# Does not include the driver.
+sudo apt-get update
+sudo apt-get -f install cuda-toolkit-10-1 cuda-libraries-10-1
+sudo apt install nvidia-cuda-toolkit
+```
+
+> **NOTE :** Using command `sudo apt-get -y install cuda` as per the documentation will install the CUDA Toolkit and Driver packages and in our case it will be driver 418. It caused problem to my machine and I had to remove it following the guidelines in reference [^7]
+> To overcome installing the drivers I used the meta package guidelines from reference [^6] to identify how to install the toolkit without installing the drivers. Sso now the command will be 
+> `sudo apt-get -y install cuda-toolkit-10-1`
 
 Then I added the following lines to the `~/.bashrc` to update the `PATH` variable as per the documentation as the following:
 
@@ -132,7 +158,8 @@ then
 fi
 unset CUDA_PATH
 ```
-> **Please Note:** The documentation guidelines is to include path `/usr/local/cuda-10.1/NsightCompute-2019.1` to the `PATH` variable but as the folder was not created, I validated and as per [this community thread](https://forums.developer.nvidia.com/t/install-cuda10-0-1-on-ubuntu16-04-no-nsightcompute-2019-3-folder/81898/6), it is not needed
+
+> **Note:** The documentation guidelines is to include path `/usr/local/cuda-10.1/NsightCompute-2019.1` to the `PATH` variable but as the folder was not created, I validated and as per [this community thread](https://forums.developer.nvidia.com/t/install-cuda10-0-1-on-ubuntu16-04-no-nsightcompute-2019-3-folder/81898/6), it is not needed
 
 then start the bash by executing command `source ~/.bashrc` and it is recommended to restart the machine for CUDA installation to complete.
 
@@ -141,9 +168,9 @@ When I tried to execute the following command
 ```bash
 sudo apt install nvidia-cuda-toolkit
 ```
+
 it failed due to missing dependency files on `libcublas10` after reviews, it was clear that I am trying to install overlapped library from two difference repositories as `nvidia-cuda-toolkit` is provided by Ubuntu repository while cuda-10.1 was provided by the deb packages.
 
-The solution was to uninstall all cuda as per the above step and only install `nvidia-cuda-toolkit` as per the suggestion from the article [Installing TensorFlow GPU in Ubuntu 20.04](https://medium.com/@stephengregory_69986/installing-cuda-10-1-on-ubuntu-20-04-e562a5e724a0)). The two different methods provided by the article in resource [^1] and the CUDA documentation they are both providing directions to install CUDA 11.0 on Ubuntu 20.04 (the article) and CUDA 10.1 on Ubuntu 18.04 (CUDA Documentation). The different in the last article is that it shows a way to install CUDA 10.1 but on Ubuntu 20.04
 
 ### 2.3. Install cuDNN SDK 7.6
 

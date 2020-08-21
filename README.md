@@ -22,3 +22,6 @@ In Each of these trials I followed some resources that guides me to execute this
 
 ### 3.1. Anaconda Trial
 In [this trial](trial-1-miniconda.md) I followed the straight guidelines documented to install miniconda and then try to create the environment using the conda command. **This trial failed.**
+
+### 3.2 Install CUDA 10.1 and CUDA Toolkit 
+In [This trial](trial-2-cuda-10-1.md) I followed the guidelines to install the CUDA 10.1 toolkit on Ubuntu 20.04 for the compatibility with TensorFlow.
